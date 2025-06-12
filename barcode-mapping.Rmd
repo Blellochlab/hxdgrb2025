@@ -1,0 +1,100 @@
+---
+title: "MULTI-Seq Barcode demultiplexing"
+author: "Deniz Goekbuget"
+date: "2024-01-15"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo= TRUE) 
+```
+## 1. MULTI-seq barcode demultiplexing
+MULTI-seq barcodes will be demultiplexed using `deMULTIplex2`. Needs the `cellranger` derived cell barcodes.
+
+```{r}
+library(deMULTIplex2) # load deMULTIplex2 into session
+library(ggrastr)
+library(readxl)
+
+##Define function(s)
+get_multiseq_bcs <- function(bc_fastq_folder,cellranger_folder,multiseq_bcs,bcfastq_prefix,output_folder){
+  data(multiseq_oligos)
+  bcs <- multiseq_oligos[multiseq_oligos %in% multiseq_bcs]
+  gex <- Read10X(cellranger_folder)
+  gex <- CreateSeuratObject(counts = gex, project = bcfastq_prefix, min.cells = 3, min.features = 200)
+  cell_bcs <- colnames(gex)
+  cell_bcs <- as.character(gsub("-1","",cell_bcs))
+  #Load barcode reads
+  read_table <- readTags(dir = bc_fastq_folder,
+                       name = bcfastq_prefix,
+                       barcode.type = "MULTIseq",
+                       assay = "RNA",
+                       filter.cells = cell_bcs)
+  tag_mtx <- alignTags(read_table, bcs)
+  #Demultiplex
+  res <- demultiplexTags(tag_mtx,
+                       plot.path = output_folder,
+                       plot.name = paste0(bcfastq_prefix,"demux2_"),
+                       plot.diagnostics = T)
+  #Export classifications
+  saveRDS(res$final_assign,file.path(output_folder,paste0(bcfastq_prefix,"classifications.rds")))
+}
+```
+
+
+```{r}
+#Identify and export barcodes
+
+#HXRB01 DC1
+meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
+    sheet = "hxrb01")
+get_multiseq_bcs(bc_fastq_folder = "/blellochlab/data1/huaigeng/20220811-HXRB01/DC1_BC",
+                 multiseq_bcs = meta$`BC Sequence`,
+                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb01",
+                 cellranger_folder = "/blellochlab/data1/huaigeng/20220811-HXRB01/DC1_mRNA/results/cellranger/count/sample-DC1_mRNA/outs/filtered_feature_bc_matrix/",
+                 bcfastq_prefix = "DC1_")
+#HXRB01 DC2
+get_multiseq_bcs(bc_fastq_folder = "/blellochlab/data1/huaigeng/20220811-HXRB01/DC2_BC",
+                 multiseq_bcs = meta$`BC Sequence`,
+                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb01",
+                 cellranger_folder = "/blellochlab/data1/huaigeng/20220811-HXRB01/DC2_mRNA/results/cellranger/count/sample-DC2_mRNA/outs/filtered_feature_bc_matrix/",
+                 bcfastq_prefix = "DC2_")
+
+#HXDGRB02
+meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
+    sheet = "hxdgrb02")
+get_multiseq_bcs(bc_fastq_folder = "/blellochlab/data1/deniz/hxdgrb02/",
+                 multiseq_bcs = meta$`BC Sequence`,
+                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxdgrb02",
+                 cellranger_folder = "/blellochlab/data1/huaigeng/HXDGRB02/results/cellranger/count/sample-HXDGRB02-GEX/outs/filtered_feature_bc_matrix/",
+                 bcfastq_prefix = "HXDGRB02-Barcode_")
+
+#HXRB03
+meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
+    sheet = "hxrb03")
+get_multiseq_bcs(bc_fastq_folder = "/blellochlab/data1/huaigeng/HXRB03/",
+                 multiseq_bcs = meta$`BC Sequence`,
+                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb03",
+                 cellranger_folder = "/blellochlab/data1/huaigeng/HXRB03/results/cellranger/count/sample-HXRB03_GEX/outs/filtered_feature_bc_matrix/",
+                 bcfastq_prefix = "HXRB03_Barcode_")
+
+#HXRB04
+meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
+    sheet = "hxrb04")
+get_multiseq_bcs(bc_fastq_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb04/fastq/merged-barcode-library",
+                 multiseq_bcs = meta$`BC Sequence`,
+                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb04",
+                 cellranger_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb04/nextflow-output-re/cellranger/count/sample-HXRB04-GEX/outs/filtered_feature_bc_matrix/",
+                 bcfastq_prefix = "HXRB04-Barcode_")
+
+#HXDGRB05
+meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
+    sheet = "hxdgrb05")
+get_multiseq_bcs(bc_fastq_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxdgrb05/fastq/",
+                 multiseq_bcs = meta$`BC Sequence`,
+                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxdgrb05",
+                 cellranger_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxdgrb05/nextflow-output/cellranger/count/sample-HXDGRB05-GEX/outs/filtered_feature_bc_matrix/",
+                 bcfastq_prefix = "HXDGRB05-BC_")
+```
