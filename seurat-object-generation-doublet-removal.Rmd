@@ -1,0 +1,106 @@
+---
+title: "Batch seurat object generation and doublet removal"
+author: "Deniz Goekbuget"
+date: "2024-01-25"
+output: html_notebook
+editor_options: 
+  chunk_output_type: inline
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Batch seurat object generation and doublet removal
+
+The output of `cellranger` and MULTI-seq barcodes from `barcode-mapping.Rmd` will be used in this analysis.
+```{r}
+#results='hide' for not showing command line output
+# Load packages and data
+library(Seurat)
+library(deMULTIplex2)
+library(readxl)
+data("multiseq_oligos")
+```
+
+
+```{r}
+#Define function
+initialize_seurat_object <- function(cellranger_folder,samplesheet,name,output_folder){
+  infile <- Read10X(cellranger_folder)
+  dat <- CreateSeuratObject(counts = infile, project = name , min.cells = 3, min.features = 200)
+  mouse <- grepl("mm10-",rownames(dat))
+  dat <- dat[!mouse,]
+  colnames(dat) <- gsub("-1","",colnames(dat))
+  rownames(dat) <- gsub("GRCh38-","",rownames(dat))
+  classifications <- readRDS(file.path(dir(output_folder,pattern="classifications.rds",full.names = T)))
+  classifications <- data.frame(classifications)
+  classifications$sample <- NA
+  ind <- match(classifications$classifications,names(multiseq_oligos))
+  ind2 <- match(multiseq_oligos[ind],meta$`BC Sequence`)
+  classifications$sample <- meta$Sample[ind2]
+  classifications$Revised_name <- meta$Revised_name[ind2]
+  dat[["multiBC"]] <- ifelse(ind, classifications[colnames(dat),]$classifications, "Empty")
+  dat[["sample"]] <- ifelse(ind, classifications[colnames(dat),]$sample, "Empty")
+  dat[["condition"]] <- ifelse(ind, classifications[colnames(dat),]$Revised_name, "Empty")
+  ind <- dat[["multiBC"]] !="negative" & dat[["multiBC"]] !="multiplet" & dat[["multiBC"]] !="Empty" 
+  dat <- dat[,ind]
+  dat[["percent.mt"]] <- PercentageFeatureSet(dat, pattern = "^MT-")
+  saveRDS(dat,file.path(output_folder,paste0(lib,"-nodups-seurat.rds")))
+}
+```
+
+
+```{r}
+#Run experiments
+#HXRB01 DC1
+lib <- "hxrb01-dc1"
+meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
+    sheet = "hxrb01")
+initialize_seurat_object(cellranger_folder = "/blellochlab/data1/huaigeng/20220811-HXRB01/DC1_mRNA/results/cellranger/count/sample-DC1_mRNA/outs/filtered_feature_bc_matrix/",
+                 samplesheet = meta,
+                 name = lib,
+                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb01/dc1")
+#HXRB01 DC2
+lib <- "hxrb01-dc2"
+meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
+    sheet = "hxrb01")
+initialize_seurat_object(cellranger_folder = "/blellochlab/data1/huaigeng/20220811-HXRB01/DC2_mRNA/results/cellranger/count/sample-DC2_mRNA/outs/filtered_feature_bc_matrix/",
+                 samplesheet = meta,
+                 name = lib,
+                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb01/dc2")
+#HXDGRB02
+lib <- "hxdgrb2"
+meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
+    sheet = "hxdgrb02")
+initialize_seurat_object(cellranger_folder = "/blellochlab/data1/huaigeng/HXDGRB02/results/cellranger/count/sample-HXDGRB02-GEX/outs/filtered_feature_bc_matrix/",
+                 samplesheet = meta,
+                 name = lib,
+                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxdgrb02")
+
+#HXRB03
+lib <- "hxrb3"
+meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
+    sheet = "hxrb03")
+initialize_seurat_object(cellranger_folder = "/blellochlab/data1/huaigeng/HXRB03/results/cellranger/count/sample-HXRB03_GEX/outs/filtered_feature_bc_matrix/",
+                 samplesheet = meta,
+                 name = lib,
+                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb03")
+
+#HXRB04
+lib <- "hxrb4"
+meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
+    sheet = "hxrb04")
+initialize_seurat_object(cellranger_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb04/nextflow-output-re/cellranger/count/sample-HXRB04-GEX/outs/filtered_feature_bc_matrix/",
+                 samplesheet = meta,
+                 name = lib,
+                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb04")
+
+#HXDGRB05
+lib <- "hxdgrb05"
+meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
+    sheet = "hxdgrb05")
+initialize_seurat_object(cellranger_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxdgrb05/nextflow-output/cellranger/count/sample-HXDGRB05-GEX/outs/filtered_feature_bc_matrix/",
+                 samplesheet = meta,
+                 name = lib,
+                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxdgrb05")
+```
