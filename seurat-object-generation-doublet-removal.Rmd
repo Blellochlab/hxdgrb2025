@@ -52,30 +52,6 @@ initialize_seurat_object <- function(cellranger_folder,samplesheet,name,output_f
 
 ```{r}
 #Run experiments
-#HXRB01 DC1
-lib <- "hxrb01-dc1"
-meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
-    sheet = "hxrb01")
-initialize_seurat_object(cellranger_folder = "/blellochlab/data1/huaigeng/20220811-HXRB01/DC1_mRNA/results/cellranger/count/sample-DC1_mRNA/outs/filtered_feature_bc_matrix/",
-                 samplesheet = meta,
-                 name = lib,
-                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb01/dc1")
-#HXRB01 DC2
-lib <- "hxrb01-dc2"
-meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
-    sheet = "hxrb01")
-initialize_seurat_object(cellranger_folder = "/blellochlab/data1/huaigeng/20220811-HXRB01/DC2_mRNA/results/cellranger/count/sample-DC2_mRNA/outs/filtered_feature_bc_matrix/",
-                 samplesheet = meta,
-                 name = lib,
-                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxrb01/dc2")
-#HXDGRB02
-lib <- "hxdgrb2"
-meta <- read_excel("/blellochlab/data1/deniz/analysis/hx-analyses/libraries.xlsx", 
-    sheet = "hxdgrb02")
-initialize_seurat_object(cellranger_folder = "/blellochlab/data1/huaigeng/HXDGRB02/results/cellranger/count/sample-HXDGRB02-GEX/outs/filtered_feature_bc_matrix/",
-                 samplesheet = meta,
-                 name = lib,
-                 output_folder = "/blellochlab/data1/deniz/analysis/hx-analyses/hxdgrb02")
 
 #HXRB03
 lib <- "hxrb3"
